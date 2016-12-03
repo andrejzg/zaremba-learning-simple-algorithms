@@ -77,4 +77,3 @@ class Cell:
     def max_action(self):
         # Take the max([of q values of [actions which don't lead to None])
         max([self.Q[a] for a in [x for x in self.actions.keys() if self.actions[x] is not None]])
-
