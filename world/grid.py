@@ -38,7 +38,7 @@ class Grid:
     def connect(self, grid):
         # Populate the grid with Cells
         for (pos, c) in np.ndenumerate(grid):
-            self.grid[pos[0], pos[1]] = Cell()
+            self.grid[pos[0], pos[1]] = Cell(['l', 'r'])
 
         # Link cells (you can think of a grid as a 2d linked list of Cell objects)
         for (pos, c) in np.ndenumerate(grid):
@@ -53,36 +53,28 @@ class Grid:
 
 
 class Cell:
-    def __init__(self):
+    def __init__(self, actions):
         # Cell data
         self.data = 0
 
-        # Actions
-        moves = ['u', 'd', 'l', 'r']
-        for m in moves:
-            self.__dict__[m] = None
-
-        # Rewards (depends on action)
-        # Rewards now depend on the output of the controller
-        self.rewards = dict.fromkeys(moves, 0)
+        # Add actions to dicts
+        self.actions = actions
+        for a in self.actions:
+            self.__dict__[a] = None
 
         # State-action values (depends on action)
-        self.Qvals = dict.fromkeys(moves, 0)
+        # The state is just the current cell
+        self.Q = dict.fromkeys(self.actions, 0)
 
         # State value
         self.V = 0
 
     # Return Q for given action
-    def q(self, action):
-        return self.Qvals[action]
+    def q(self, a):
+        return self.Q[a]
 
     # Max action
     def max_action(self):
-        # Only consider Qvals for allowed actions
-        Qs = {k: self.Qvals[k] for k in self.allowed_actions()}
-        # Now select and return max action
-        return max(Qs, key=Qs.get)
+        # Take the max([of q values of [actions which don't lead to None])
+        max([self.Q[a] for a in [x for x in self.actions.keys() if self.actions[x] is not None]])
 
-    # Return allowed actions-09p
-    def allowed_actions(self):
-        return [k for k in self.actions if self.actions[k] is not None]

@@ -52,7 +52,7 @@ def main():
                 y = outputs.pop(0)
 
                 # partial fit model using a single SGD step
-                model.partial_fit(x, y, data.classes)
+                model.partial_fit(x, y, classes=data.classes)
 
                 # refactor into
                 if input_tape.step() is None:
