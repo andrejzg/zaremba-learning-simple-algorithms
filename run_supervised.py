@@ -30,7 +30,7 @@ def main():
         while acc < 1.0:
             epoch_iter += 1
 
-            # generate data
+            # generate a new data grid
             inputs, actions, outputs, solution = data.task(tasks.reverse, complexity)
 
             input_tape = Grid(1, complexity)

@@ -1,4 +1,6 @@
 import numpy as np
+import world.policy as policy
+
 from sklearn import neural_network
 
 from world.grid import Grid
@@ -11,58 +13,86 @@ def main():
     #                                   TRAIN
     ########################################################################
 
-    # TODO: implement Q-learning            // THU / FRI
-
     data = datagen.Data()
-    classes = list('0123456789') + ['-1']
-
-    acc = 0
-    epochs = 20
-    model = neural_network.MLPClassifier(activation='logistic', hidden_layer_sizes=(100,))
+    epochs = 10
+    model = neural_network.MLPClassifier(activation='logistic', hidden_layer_sizes=(200,))
+    alpha = 0.2
+    gamma = 1
 
     for epoch in range(epochs):
         complexity = (epoch + 1) * 4 + 2
         acc = 0
         epoch_iter = 0
 
-        print('\n\n======= EPOCH\t{}/{}\tcomplexity:{} ======='.format(epoch + 1, epochs, complexity))
+        model.partial_fit(data.char2vec['r'], np.array([-1]), classes=data.classes)
+        # print('\n\n======= EPOCH\t{}/{}\tcomplexity:{} ======='.format(epoch + 1, epochs, complexity))
+
+        input_tape = Grid(1, complexity)
 
         while acc < 1.0:
             epoch_iter += 1
 
             # generate data
-            inputs, actions, outputs, solution = data.task(tasks.reverse, complexity)
-
-            input_tape = Grid(1, complexity)
+            inputs, actions, outputs, in_tape, solution, _ = data.task(tasks.reverse, complexity)
             input_tape.populate(inputs)
             input_tape.solution = solution
+            input_tape.reset_head()
 
-            # initial action
-            a = np.zeros(inputs[0].shape[0])
+            # initial state
+            s = input_tape.start
 
-            # keep taking actions until the end
+            # print('\n\ncomplexity: {} solution: {}'.format(complexity, solution))
+
             while True:
-                # read input tape
-                i = input_tape.head.data
+                # which action to take?
+                a = policy.e_greedy(s, 0.2)
 
-                # combine input + action vectors into input x
-                x = (a + i).reshape(1, -1)
+                # take action
+                s_new = s.take_action(a)
+
+                # action vector
+                a_vec = data.char2vec[a]
+
+                # read input tape
+                i = s.data
+
+                # combine input + action vector into input x
+                x = (a_vec + i).reshape(1, -1)
 
                 # expected output y
                 y = outputs.pop(0)
+                solution.pop(0)
+
+                # get model prediction
+                y_pred = model.predict(x)
 
                 # partial fit model using a single SGD step
                 model.partial_fit(x, y, classes=data.classes)
 
-                # refactor into
-                if input_tape.step() is None:
+                if y != -1 and y == y_pred:
+                    print('HOORAH!')
+
+                # generate reward signal
+                if y == y_pred:
+                    reward = 1
+                    # print('CORRECT! {}\t\ty: {}\ty_pred: {}'.format(a, y[0], y_pred[0]))
+                else:
+                    reward = 0
+                    # print('WRONG! {}\t\ty: {}\ty_pred: {}'.format(a, y[0], y_pred[0]))
+
+                # if reward is 0 terminate
+                if reward == 0:
                     break
 
-                # new prev action
-                a = actions.pop(0)
+                s.Q[a] -= alpha * (
+                    s.Q[a] - (reward / len(solution) + gamma * s_new.Q[policy.greedy(s_new)] / len(solution)))
+
+                s = s_new
+
+            # print(in_tape)
 
             # Test model every now and again
-            if epoch_iter % 1 == 0:
+            if epoch_iter % 100 == 0:
                 acc = test(complexity, data, model, 100)
                 print(acc)
 
@@ -86,7 +116,7 @@ def test(complexity, data, model, runs, verbose=False):
 
     accuracies = []
     for _ in range(runs):
-        inputs, actions, outputs, solution = data.task(tasks.reverse, complexity)
+        inputs, actions, outputs, _, solution, _ = data.task(tasks.reverse, complexity)
 
         input_tape = Grid(1, complexity)
         input_tape.populate(inputs)

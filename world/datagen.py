@@ -32,4 +32,4 @@ class Data():
         _outputs = [-1 if i is '-' else i for i in outputs]
         _outputs = [np.array([int(i)]) for i in _outputs]
 
-        return _inputs, _actions, _outputs, actions
+        return _inputs, _actions, _outputs, inputs, actions, outputs
