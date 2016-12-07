@@ -2,7 +2,7 @@ import numpy as np
 from sklearn import neural_network
 
 from world.grid import Grid
-from world import datagen
+from world import data
 from world import tasks
 
 
@@ -13,7 +13,7 @@ def main():
 
     # TODO: implement Q-learning            // THU / FRI
 
-    data = datagen.Data()
+    data = data.Data()
     classes = list('0123456789') + ['-1']
 
     acc = 0

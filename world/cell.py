@@ -1,7 +1,8 @@
 class Cell:
-    def __init__(self, actions):
+    def __init__(self, actions, vec=0, char=0):
         # Cell data
-        self.data = 0
+        self.vec = vec
+        self.char = char
 
         self.actions = actions
         # Add actions to dicts

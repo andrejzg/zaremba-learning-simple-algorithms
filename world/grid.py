@@ -1,56 +1,42 @@
 import numpy as np
+
+from world.data import Data
 from world.cell import Cell
 
+
 class Grid:
-    def __init__(self, nrows, ncols, solution=[]):
-        # Initialize grid as a 2d num9py array
-        self.grid = np.ndarray((nrows, ncols), dtype=object)  # the dtype is an object, not a number
-        self.connect(self.grid)
-
-        # The read head
-        self.head = self.grid[(0, 0)]
-
-        # Correct actions
-        self.solution = solution
-        self.a_i = 0
+    def __init__(self, task, complexity=6, start_action='r'):
+        data = Data()
+        self.inputs, self.actions, self.outputs, grid_size = data.task(task, complexity)
+        self.grid = np.ndarray((grid_size[0], grid_size[1]), dtype=object)
+        self.__instatiate()
+        self.__populate()
+        self.__connect()
 
         # Start state
-        self.start = Cell('r')
-        self.start.r = self.head
-
-    def populate(self, data):
-        # TODO: make this work with 2d grids as well
-        for idx, val in enumerate(data):
-            self.grid[0, idx].data = val
-
-    def step(self):
-        try:
-            a = self.solution[self.a_i]
-            self.head = self.head.__dict__[a]
-            self.a_i += 1
-            return self.head.data
-        except:
-            return None
-
-    def reset_head(self):
-        self.head = self.grid[(0, 0)]
-        self.a_i = 0
+        self.start = Cell(start_action)
+        self.start.r = self.grid.item(0)
 
     def __str__(self):
-        return np.array([[c.data for c in row] for row in self.grid.tolist()]).__str__()
+        return str(self.inputs.chars)
 
-    def connect(self, grid):
-        # Populate the grid with Cells
-        for (pos, c) in np.ndenumerate(grid):
-            self.grid[pos[0], pos[1]] = Cell(['l', 'r'])
+    def __instatiate(self):
+        for pos, _ in np.ndenumerate(self.grid):
+            self.grid[pos[0], pos[1]] = Cell(self.actions.chars)
 
+    def __populate(self):
+        for c, vec, char in zip(self.grid.flatten(), self.inputs.vecs.flatten(), self.inputs.chars):
+            c.vec = vec
+            c.char = char
+
+    def __connect(self):
         # Link cells (you can think of a grid as a 2d linked list of Cell objects)
-        for (pos, c) in np.ndenumerate(grid):
-            if pos[0] < grid.shape[0] - 1:
-                c.u = grid[pos[0] + 1, pos[1]]
+        for pos, c in np.ndenumerate(self.grid):
+            if pos[0] < self.grid.shape[0] - 1:
+                c.u = self.grid[pos[0] + 1, pos[1]]
             if pos[0] > 0:
-                c.d = grid[pos[0] - 1, pos[1]]
+                c.d = self.grid[pos[0] - 1, pos[1]]
             if pos[1] > 0:
-                c.l = grid[pos[0], pos[1] - 1]
-            if pos[1] < grid.shape[1] - 1:
-                c.r = grid[pos[0], pos[1] + 1]
+                c.l = self.grid[pos[0], pos[1] - 1]
+            if pos[1] < self.grid.shape[1] - 1:
+                c.r = self.grid[pos[0], pos[1] + 1]

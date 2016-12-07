@@ -4,7 +4,7 @@ import world.policy as policy
 from sklearn import neural_network
 
 from world.grid import Grid
-from world import datagen
+from world import data
 from world import tasks
 
 
@@ -13,7 +13,7 @@ def main():
     #                                   TRAIN
     ########################################################################
 
-    data = datagen.Data()
+    data = data.Data()
     epochs = 10
     model = neural_network.MLPClassifier(activation='logistic', hidden_layer_sizes=(200,))
     alpha = 0.2
